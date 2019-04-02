@@ -55,14 +55,17 @@ class Viewer : public QGLWidget {
 
   void createShaderPerlin();
   void createShaderNormal();
+  void createShaderShowNormal();
   void createShaderTest();
   void deleteShaders();
   void enableShaderPerlin();
   void enableShaderTest();
   void enableShaderNormal();
+  void enableShaderShowNormal();
   void disableShader();
   void drawPerlin();
   void drawNormal();
+  void drawShowNormal();
 
   QTimer        *_timer;    // timer that controls the animation
   unsigned int   _currentshader; // current shader index
@@ -80,6 +83,7 @@ class Viewer : public QGLWidget {
 
   Shader *_shaderPerlin;
   Shader *_shaderNormal;
+  Shader *_shaderShowNormal;
   Shader *_shaderTest;
 
 

@@ -36,6 +36,6 @@ vec3 n2 = vec3(0.,1.,-g.y*scale);
 vec3 n = normalize(cross(n1,n2));
 
 
-outBuffer = vec4(n,value(texture(heightmap,texcoord)));
+outBuffer =vec4(n,value(texture(heightmap,texcoord)));
 
 }

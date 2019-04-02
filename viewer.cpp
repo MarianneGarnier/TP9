@@ -111,14 +111,13 @@ void Viewer::createFBONormal(){
 glGenFramebuffers(1,&_fboNormal);
 glGenTextures(1,&_texNormal);
 
-
 }
 
 void Viewer::initFBOPerlin() {
 
   // create the texture for rendering depth values
   glBindTexture(GL_TEXTURE_2D,_texPerlin);
-  glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT24,resol,resol,0,GL_DEPTH_COMPONENT,GL_FLOAT,NULL);
+  glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,resol,resol,0,GL_RGBA,GL_FLOAT,NULL);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -127,7 +126,7 @@ void Viewer::initFBOPerlin() {
   // attach textures to framebuffer object
   glBindFramebuffer(GL_FRAMEBUFFER,_fboPerlin);
   glBindTexture(GL_TEXTURE_2D,_texPerlin);
-  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,_texPerlin,0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,_texPerlin,0);
 
     // test if everything is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -141,7 +140,7 @@ void Viewer::initFBONormal() {
 
   // create the texture for rendering depth values
   glBindTexture(GL_TEXTURE_2D,_texNormal);
-  glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT24,resol,resol,0,GL_DEPTH_COMPONENT,GL_FLOAT,NULL);
+  glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,resol,resol,0,GL_RGBA,GL_FLOAT,NULL);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -150,7 +149,7 @@ void Viewer::initFBONormal() {
   // attach textures to framebuffer object
   glBindFramebuffer(GL_FRAMEBUFFER,_fboNormal);
   glBindTexture(GL_TEXTURE_2D,_texNormal);
-  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,_texNormal,0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,_texNormal,0);
 
     // test if everything is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -180,8 +179,12 @@ void Viewer::createShaderPerlin() {
 }
 void Viewer::createShaderNormal() {
     _shaderNormal = new Shader();
-
     _shaderNormal->load("shaders/normal.vert","shaders/normal.frag");
+
+}
+void Viewer::createShaderShowNormal() {
+    _shaderShowNormal = new Shader();
+    _shaderShowNormal->load("shaders/shownormal.vert","shaders/shownormal.frag");
 
 }
 void Viewer::createShaderTest() {
@@ -193,6 +196,7 @@ void Viewer::createShaderTest() {
 
 void Viewer::deleteShaders(){
   delete _shaderNormal;
+  delete _shaderShowNormal;
   delete _shaderPerlin;
   delete _shaderTest;
 
@@ -205,6 +209,13 @@ void Viewer::deleteShaders(){
 void Viewer::enableShaderNormal() {
   // current shader ID
   GLuint id = _shaderNormal->id();
+  // activate the current shader
+  glUseProgram(id);
+
+}
+void Viewer::enableShaderShowNormal() {
+  // current shader ID
+  GLuint id = _shaderShowNormal->id();
   // activate the current shader
   glUseProgram(id);
 
@@ -234,50 +245,46 @@ void Viewer::disableShader() {
 
 void Viewer::paintGL() {
   // draw Perlin noise in FBO
-/*  glBindFramebuffer(GL_FRAMEBUFFER,_fboPerlin);*/
-
-  //glDrawBuffer(GL_NONE);
-  //glViewport(0,0,resol,resol);
- glViewport(0,0,width(),height());
-
-  // clear the color and depth buffers
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+ glBindFramebuffer(GL_FRAMEBUFFER,_fboPerlin);
+glViewport(0,0,resol,resol);
   // tell the GPU to use this specified shader and send custom variables (matrices and others)
   enableShaderPerlin();
-
-
-
+    // clear the color and depth buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   // actually draw the scene
   drawVAOQuad();
-
   // tell the GPU to stop using this shader
   disableShader();
+ glBindFramebuffer(GL_FRAMEBUFFER,0);
 
-/*  glBindFramebuffer(GL_FRAMEBUFFER,0);
-  // TODO pour afficher le fbo contenant le bruit de Perlin
- glViewport(0,0,width(),height());
 
+ glBindFramebuffer(GL_FRAMEBUFFER,_fboNormal);
+  glViewport(0,0,resol,resol);
   // activate the rendering shader
   enableShaderNormal();
 
   // clear buffers
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  // draw the scene and apply the shadows
   drawNormal();
   disableShader();
+  glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+
+glViewport(0,0,width(),height());
+  enableShaderShowNormal();
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  drawShowNormal();
+
   if(_showPerlinMap) {
-   glViewport(0,0,width(),height());
     enableShaderTest();
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //-> créer le shader qui affiche le contenu du FBO
     // on envoie le bruit de perlin au shader test
     drawPerlin();
-//  }
+    //drawNormal();
+  }
+  disableShader();
 
-  //  disableShaderTest(); ou juste
-  disableShader();*/
 
 
 }
@@ -296,8 +303,17 @@ void Viewer::drawNormal(){
   // send depth texture
 
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D,_texNormal);
+  glBindTexture(GL_TEXTURE_2D,_texPerlin);
   glUniform1i(glGetUniformLocation(_shaderNormal->id(),"heightmap"),0);
+// draw the quad
+  drawVAOQuad();
+}
+void Viewer::drawShowNormal(){
+  // send depth texture
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D,_texNormal);
+  glUniform1i(glGetUniformLocation(_shaderShowNormal->id(),"heightmap"),0);
 // draw the quad
   drawVAOQuad();
   // disable VAO
@@ -380,6 +396,7 @@ void Viewer::keyPressEvent(QKeyEvent *ke) {
   if(ke->key()==Qt::Key_R) {
     _shaderPerlin->reload("shaders/noise.vert","shaders/noise.frag");
     _shaderNormal->reload("shaders/normal.vert","shaders/normal.frag");
+    _shaderShowNormal->reload("shaders/shownormal.vert","shaders/shownormal.frag");
     _shaderTest->reload("shaders/test.vert","shaders/test.frag");
 
   }
@@ -423,7 +440,8 @@ void Viewer::initializeGL() {
 
   // load shader files
   createShaderPerlin();
-//  createShaderNormal();
+ createShaderNormal();
+ createShaderShowNormal();
   createShaderTest();
 
 
@@ -434,8 +452,8 @@ void Viewer::initializeGL() {
   createFBOPerlin();
   initFBOPerlin();
 // create/init FBO Normal
-/*  createFBONormal();
-  initFBONormal();*/
+ createFBONormal();
+  initFBONormal();
 
   // starts the timer
   _timer->start();
