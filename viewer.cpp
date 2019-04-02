@@ -23,7 +23,7 @@ Viewer::Viewer(char *filename,const QGLFormat &format)
   //_mesh = new Mesh(filename);
 
   // create a camera (automatically modify model/view matrices according to user interactions)
-  //_cam  = new Camera(_mesh->radius,glm::vec3(_mesh->center[0],_mesh->center[1],_mesh->center[2]));
+  //cam  = new Camera(_mesh->radius,glm::vec3(_mesh->center[0],_mesh->center[1],_mesh->center[2]));
   _cam = new Camera();
   _timer->setInterval(10);
   connect(_timer,SIGNAL(timeout()),this,SLOT(updateGL()));
